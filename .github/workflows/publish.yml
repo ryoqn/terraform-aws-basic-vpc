@@ -1,0 +1,70 @@
+name: Publish a Private Module
+
+on:
+  workflow_dispatch:
+
+jobs: 
+  setup:
+    name: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      version: ${{ env.VERSION }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: set module version
+        run: |
+          echo VERSION=$(head -n 1 ./version.txt) >> $GITHUB_ENV
+
+      - name: check tag exists
+        uses: mukunku/tag-exists-action@v1.0.0
+        id: checkTag
+        with:
+          tag: ${{ env.VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup git config
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+
+      - name: create tag
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ env.VERSION }}"
+          git tag $TAG
+          git push origin $TAG
+
+  publish:
+    name: publish
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      publishurl: ${{ env.URL }}
+    
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: publish
+        env: 
+          TOKEN: ${{ secrets.TF_API_TOKEN }}
+        run: |
+          publish_url=https://app.terraform.io/api/v2/organizations/ryoqn-company/registry-modules/vcs
+          publish_data=$(curl \
+          --header "Authorization: Bearer $TOKEN" \
+          --header "Content-Type: application/vnd.api+json" \
+          --request POST \
+          --data @publish.json \
+          $publish_url)
+          echo $(cat ./publish.json)
+          echo URL=$($publish_data jq -r .data.links.self) >> $GITHUB_ENV

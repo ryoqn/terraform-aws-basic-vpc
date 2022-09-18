@@ -1,0 +1,12 @@
+{
+    "data": {
+        "attributes": {
+            "vcs-repo": {
+                "identifier": "ryoqn-company/terraform-aws-basic-vpc",
+                "oauth-token-id": "ot-jWeMo8rbVodUP3yX",
+                "display_identifier": "ryoqn-company/terraform-aws-basic-vpc"
+            }
+        },
+        "type": "registry-modules"
+    }
+}
